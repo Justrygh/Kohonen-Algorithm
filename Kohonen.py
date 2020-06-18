@@ -2,7 +2,6 @@ import sys
 import matplotlib.pyplot as plt
 import random
 import math
-import numpy as np
 
 
 class Point:
@@ -31,6 +30,7 @@ class Node:
     def __init__(self, point=Point(), index=Index(), adjacent=[]):
         """
         :param point: Point (X, Y)
+        :param index: The point index in the matrix topology.
         :param adjacent: The current point neighbours - matrix topology.
         """
         self.point = point
@@ -87,7 +87,7 @@ def min_distance_board(point, board):
     """
     Function to find the minimum distance for task C
     :param point: Given Point
-    :param neurons: Array of neurons
+    :param board: Matrix of neurons
     :return: The closest neuron to the given point.
     """
     minimum = sys.maxsize
@@ -119,7 +119,7 @@ def update_conscience_board(index, board):
     """
     This function will reset the neurons conscience except for the closest neuron for task C.
     :param index: Index of the closest neuron
-    :param neurons: Array of neurons
+    :param board: Matrix of neurons
     :return: The updated neurons consciences.
     """
     for i in range(len(board[0])):
@@ -137,6 +137,7 @@ def move_algorithm(point, index, neurons, radius, task):
     :param index: Index of the closest neuron
     :param neurons: Array of neurons
     :param radius: Number of adjacent neighbours.
+    :param task: Task A / B
     :return: The updated neurons locations according to the given radius.
     """
     neurons[index].x += (point.x - neurons[index].x) / 2
@@ -151,10 +152,11 @@ def move_algorithm(point, index, neurons, radius, task):
                 neurons[i_right].x += (point.x - neurons[i_right].x) * delta
                 neurons[i_right].y += (point.y - neurons[i_right].y) * delta
                 neurons[i_right].change = 1
-            if i_left > 0:
+            if i_left >= 0:
                 neurons[i_left].x += (point.x - neurons[i_left].x) * delta
                 neurons[i_left].y += (point.y - neurons[i_left].y) * delta
                 neurons[i_left].change = 1
+
     elif task == "B":
         for i in range(1, radius + 1):
             i_right = (index + i) % len(neurons)
@@ -179,7 +181,7 @@ def move_algorithm_board(point, index, board, radius):
     Algorithm for task C: Given neurons with topology of a 5x5, moving the adjacent neurons using Gaussian Distribution.
     :param point: Given Point
     :param index: Index of the closest neuron
-    :param neurons: Array of neurons
+    :param board: Matrix of neurons
     :param radius: Number of adjacent neighbours.
     :return: The updated board locations according to the given radius.
     """
@@ -218,16 +220,18 @@ def move_algorithm_board(point, index, board, radius):
                     board[locate.x][locate.y].point.change = 1
                     for k in range(len(node.adjacent)):
                         queue1.append(node.adjacent[k])
+
     return update_conscience_board(index, board)
 
 
-def paint_neurons(points, neurons, label, task):
+def paint_neurons(points, neurons, task, label, border):
     """
     Function to draw the points and neurons.
     :param points: Array of points
     :param neurons: Array of neurons
-    :param label: Title of the task.
     :param task: Task A / B
+    :param label: Title of the task.
+    :param border: if border = 0, draw circle border, if border = 1, draw ring border (2 circles)
     :return: None
     """
     neurons_x = []
@@ -240,6 +244,16 @@ def paint_neurons(points, neurons, label, task):
         plt.scatter(neurons[i].x, neurons[i].y, color='blue')
     if task == "B":
         neurons_x.append(neurons_x[0]), neurons_y.append(neurons_y[0])
+    if border == 0:
+        circle1 = plt.Circle((0,0), 2, color='r', fill=False)
+        ax = plt.gca()
+        ax.add_patch(circle1)
+    elif border == 1:
+        circle1 = plt.Circle((0, 0), 2, color='r', fill=False)
+        circle2 = plt.Circle((0, 0), 4, color='r', fill=False)
+        ax = plt.gca()
+        ax.add_patch(circle1)
+        ax.add_patch(circle2)
     plt.suptitle(label)
     plt.plot(neurons_x, neurons_y)
     plt.draw()
@@ -251,8 +265,8 @@ def paint_board(points, board, label):
     """
         Function to draw the points and board.
         :param points: Array of points
-        :param neurons: Array of neurons
-        :param label: Title of the task.
+        :param board: Matrix of neurons
+        :param label: Title of the task
         :return: None
         """
     neurons_x = [[] for i in range(2 * len(board[0]))]
@@ -274,24 +288,28 @@ def paint_board(points, board, label):
     plt.suptitle(label)
     for i in range(len(neurons_x)):
         plt.plot(neurons_x[i], neurons_y[i], 'b')
+    circle1 = plt.Circle((0, 0), 2, color='r', fill=False)
+    ax = plt.gca()
+    ax.add_patch(circle1)
     plt.draw()
     plt.pause(0.01)
     plt.clf()
 
 
-def algorithm(points, neurons, task):
+def algorithm(points, neurons, task, label="", border=0):
     """
     Function to activate the Kohonen algorithm for tasks A & B
     :param points: Array of points
     :param neurons: Array of neurons
     :param task: Task A / B
-    :return: None
+    :param label: Title of the task
+    :param border: if border = 0, draw circle border, if border = 1, draw ring border (2 circles)
+    :return: The updated neurons locations according to the given radius.
     """
-    label = ""
     if task == "A":
-        paint_neurons(points, neurons, label, "A")
+        paint_neurons(points, neurons, "A", label, border)
     elif task == "B":
-        paint_neurons(points, neurons, label, "B")
+        paint_neurons(points, neurons, "B", label, border)
     size = int(len(points)/len(neurons)*2) + 1
     radius = int(len(neurons)/2)
     for i in range(len(points)):
@@ -300,24 +318,27 @@ def algorithm(points, neurons, task):
         if task == "A":
             new_neurons = move_algorithm(points[i], min_distance(points[i], neurons), neurons, radius, "A")
             if i % 10 == 0:
-                paint_neurons(points, new_neurons, label, "A")
+                paint_neurons(points, new_neurons, "A", label, border)
         elif task == "B":
             new_neurons = move_algorithm(points[i], min_distance(points[i], neurons), neurons, radius, "B")
             if i % 10 == 0:
-                paint_neurons(points, new_neurons, label, "B")
+                paint_neurons(points, new_neurons, "B", label, border)
+
+    return  new_neurons
 
 
-def algorithm_board(points, board):
+def algorithm_board(points, board, label=""):
     """
     Function to activate the Kohonen algorithm for task C
     :param points: Array of points
-    :param neurons: Array of neurons
+    :param board: Matrix of neurons
+    :param label: Title of the task
     :return: None
     """
-    label = ""
     paint_board(points, board, label)
     radius = len(board[0]) + 1
-    for j in range(len(board[0])):
+    for j in range(1):
+    #for j in range(len(board[0])):
         radius -= 1
         for i in range(len(points)):
             new_board = move_algorithm_board(points[i], min_distance_board(points[i], board), board, radius)
@@ -325,38 +346,155 @@ def algorithm_board(points, board):
                 paint_board(points, new_board, label)
 
 
+def create_points(x, radius):
+    y_ = random.uniform(-radius, radius)
+    while y_ ** 2 + x ** 2 > radius ** 2:
+        y_ = random.uniform(-radius, radius)
+    return y_
+
+
+def create_points_ring(x, radius1, radius2):
+    y_ = random.uniform(-radius2, radius2)
+    while (y_ ** 2 + x ** 2 > radius2 ** 2) or (y_ ** 2 + x ** 2 < radius1 ** 2):
+        y_ = random.uniform(-radius2, radius2)
+    flag = random.randint(0, 1)
+    if flag == 1:
+        y_ *= -1
+    return y_
+
+
 def main():
+    radius = 2
+    """ ====================> Tasks: A - C <==================== """
+    # Question A - TEST
     neurons = []
     points = []
-    for i in range(1, 16):
-        neurons.append(Point(random.randint(1, 60), random.randint(1, 60)))
+    for i in range(30):
+        neurons.append(Point(random.uniform(-.2, .2), random.uniform(-.2, .2)))
 
-    # Question 1 - TEST
-    for i in range(100):
-        points.append(Point(random.randint(0, 50), random.randint(0, 50)))
+    for i in range(200):
+        x = random.uniform(-radius, radius)
+        points.append(Point(x, create_points(x, radius)))
 
-    algorithm(points, neurons, "A")
+    for i in range(1):
+        neurons = algorithm(points, neurons, "A", "Line Topology - Uniform Data & Neurons Distribution")
 
+    #Question B - TEST
     neurons = []
     points = []
-    for i in range(1, 16):
-        neurons.append(Point(random.randint(1, 60), random.randint(1, 60)))
+    for i in range(30):
+        neurons.append(Point(random.uniform(-.2, .2), random.uniform(-.2, .2)))
 
-    # Question 1 - TEST
-    for i in range(100):
-        points.append(Point(random.randint(0, 50), random.randint(0, 50)))
+    for i in range(200):
+        x = random.uniform(-radius, radius)
+        points.append(Point(x, create_points(x, radius)))
 
-    algorithm(points, neurons, "B")
+    for i in range(1):
+        neurons = algorithm(points, neurons, "B", "Circle Topology - Uniform Data & Neurons Distribution")
 
+    #Question C - TEST
     points = []
-    for i in range(300):
-        points.append(Point(random.random() * 10, random.random() * 10))
+    for i in range(200):
+        x = random.uniform(-radius, radius)
+        points.append(Point(x, create_points(x, radius)))
     neurons = [[Point() for i in range(5)] for j in range(5)]
     for i in range(5):
         for j in range(5):
-            neurons[i][j] = Point(random.randint(20, 30), random.randint(20, 30))
+            neurons[i][j] = Point(random.uniform(-.2, .2), random.uniform(-.2, .2))
     board = create_board(neurons)
-    algorithm_board(points, board)
+    algorithm_board(points, board, "5x5 Topology - Uniform Data & Neurons Distribution")
+
+    """ ====================> Task: D <==================== """
+    # Question A - TEST
+    neurons = []
+    points = []
+    for i in range(30):
+        neurons.append(Point(random.uniform(-.2, .2), random.uniform(-.2, .2)))
+
+    radius = 1
+    for i in range(100):
+        x = random.uniform(-radius, radius)
+        points.append(Point(x, create_points(x, radius)))
+
+    radius = 2
+    for i in range(100):
+        x = random.uniform(-radius, radius)
+        points.append(Point(x, create_points(x, radius)))
+
+    for i in range(1):
+        neurons = algorithm(points, neurons, "A", "Line Topology - Random Data & Neurons Distribution")
+
+    # Question B - TEST
+    neurons = []
+    points = []
+    for i in range(30):
+        neurons.append(Point(random.uniform(-.2, .2), random.uniform(-.2, .2)))
+
+    radius = 1
+    for i in range(100):
+        x = random.uniform(-radius, radius)
+        points.append(Point(x, create_points(x, radius)))
+
+    radius = 2
+    for i in range(100):
+        x = random.uniform(-radius, radius)
+        points.append(Point(x, create_points(x, radius)))
+
+    for i in range(1):
+        neurons = algorithm(points, neurons, "B", "Circle Topology - Random Data & Neurons Distribution")
+
+    # Question C - TEST
+    points = []
+    radius = 1
+    for i in range(100):
+        x = random.uniform(-radius, radius)
+        points.append(Point(x, create_points(x, radius)))
+
+    radius = 2
+    for i in range(100):
+        x = random.uniform(-radius, radius)
+        points.append(Point(x, create_points(x, radius)))
+    neurons = [[Point() for i in range(5)] for j in range(5)]
+    for i in range(5):
+        for j in range(5):
+            neurons[i][j] = Point(random.uniform(-.2, .2), random.uniform(-.2, .2))
+    board = create_board(neurons)
+    algorithm_board(points, board, "5x5 Topology - Random Data & Neurons Distribution")
+
+    """ ====================> Task: E <==================== """
+    radius1 = 2
+    radius2 = 4
+    # Question A - TEST
+    neurons = []
+    points = []
+    for i in range(30):
+        neurons.append(Point(random.uniform(-.2, .2), random.uniform(-.2, .2)))
+
+    for i in range(200):
+        x = random.uniform(-radius2, radius2)
+        flag = random.randint(0,1)
+        if flag == 1:
+            x *= -1
+        points.append(Point(x, create_points_ring(x, radius1, radius2)))
+
+    for i in range(10):
+        neurons = algorithm(points, neurons, "A", "Line Topology - Uniform Data & Neurons Distribution", 1)
+
+    # Question B - TEST
+    neurons = []
+    points = []
+    for i in range(30):
+        neurons.append(Point(random.uniform(-.2, .2), random.uniform(-.2, .2)))
+
+    for i in range(200):
+        x = random.uniform(-radius2, radius2)
+        flag = random.randint(0, 1)
+        if flag == 1:
+            x *= -1
+        points.append(Point(x, create_points_ring(x, radius1, radius2)))
+
+    for i in range(10):
+        neurons = algorithm(points, neurons, "B", "Circle Topology - Uniform Data & Neurons Distribution", 1)
 
 
 if __name__ == '__main__':
