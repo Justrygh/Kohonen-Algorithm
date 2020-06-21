@@ -224,7 +224,7 @@ def move_algorithm_board(point, index, board, radius):
     return update_conscience_board(index, board)
 
 
-def paint_neurons(points, neurons, task, label, border):
+def paint_neurons(points, neurons, task, label, border, done=0):
     """
     Function to draw the points and neurons.
     :param points: Array of points
@@ -232,6 +232,7 @@ def paint_neurons(points, neurons, task, label, border):
     :param task: Task A / B
     :param label: Title of the task.
     :param border: if border = 0, draw circle border, if border = 1, draw ring border (2 circles)
+    :param done: If done = 0, draw the neurons and clear, if done = 1, last iteration, show the neurons.
     :return: None
     """
     neurons_x = []
@@ -256,17 +257,21 @@ def paint_neurons(points, neurons, task, label, border):
         ax.add_patch(circle2)
     plt.suptitle(label)
     plt.plot(neurons_x, neurons_y)
-    plt.draw()
-    plt.pause(0.1)
-    plt.clf()
+    if done == 1:
+        plt.show()
+    else:
+        plt.draw()
+        plt.pause(0.01)
+        plt.clf()
 
 
-def paint_board(points, board, label):
+def paint_board(points, board, label, done=0):
     """
         Function to draw the points and board.
         :param points: Array of points
         :param board: Matrix of neurons
         :param label: Title of the task
+        :param done: If done = 0, draw the board and clear, if done = 1, last iteration, show the board.
         :return: None
         """
     neurons_x = [[] for i in range(2 * len(board[0]))]
@@ -291,9 +296,12 @@ def paint_board(points, board, label):
     circle1 = plt.Circle((0, 0), 2, color='r', fill=False)
     ax = plt.gca()
     ax.add_patch(circle1)
-    plt.draw()
-    plt.pause(0.01)
-    plt.clf()
+    if done == 1:
+        plt.show()
+    else:
+        plt.draw()
+        plt.pause(0.01)
+        plt.clf()
 
 
 def algorithm(points, neurons, task, label="", border=0):
@@ -324,7 +332,7 @@ def algorithm(points, neurons, task, label="", border=0):
             if i % 10 == 0:
                 paint_neurons(points, new_neurons, "B", label, border)
 
-    return  new_neurons
+    return new_neurons
 
 
 def algorithm_board(points, board, label=""):
@@ -337,13 +345,15 @@ def algorithm_board(points, board, label=""):
     """
     paint_board(points, board, label)
     radius = len(board[0]) + 1
-    for j in range(1):
-    #for j in range(len(board[0])):
+    for j in range(len(board[0])):
         radius -= 1
+        random.shuffle(points)
         for i in range(len(points)):
             new_board = move_algorithm_board(points[i], min_distance_board(points[i], board), board, radius)
             if i % 10 == 0:
                 paint_board(points, new_board, label)
+
+    paint_board(points, new_board, label, 1)
 
 
 def create_points(x, radius):
@@ -357,9 +367,6 @@ def create_points_ring(x, radius1, radius2):
     y_ = random.uniform(-radius2, radius2)
     while (y_ ** 2 + x ** 2 > radius2 ** 2) or (y_ ** 2 + x ** 2 < radius1 ** 2):
         y_ = random.uniform(-radius2, radius2)
-    flag = random.randint(0, 1)
-    if flag == 1:
-        y_ *= -1
     return y_
 
 
@@ -376,8 +383,12 @@ def main():
         x = random.uniform(-radius, radius)
         points.append(Point(x, create_points(x, radius)))
 
-    for i in range(1):
+    for i in range(10):
+        random.shuffle(points)
         neurons = algorithm(points, neurons, "A", "Line Topology - Uniform Data & Neurons Distribution")
+
+    paint_neurons(points, neurons, "A", "Line Topology - Uniform Data & Neurons Distribution", 0, 1)
+
 
     #Question B - TEST
     neurons = []
@@ -389,8 +400,11 @@ def main():
         x = random.uniform(-radius, radius)
         points.append(Point(x, create_points(x, radius)))
 
-    for i in range(1):
+    for i in range(10):
+        random.shuffle(points)
         neurons = algorithm(points, neurons, "B", "Circle Topology - Uniform Data & Neurons Distribution")
+
+    paint_neurons(points, neurons, "B", "Circle Topology - Uniform Data & Neurons Distribution", 0, 1)
 
     #Question C - TEST
     points = []
@@ -421,8 +435,11 @@ def main():
         x = random.uniform(-radius, radius)
         points.append(Point(x, create_points(x, radius)))
 
-    for i in range(1):
+    for i in range(10):
+        random.shuffle(points)
         neurons = algorithm(points, neurons, "A", "Line Topology - Random Data & Neurons Distribution")
+
+    paint_neurons(points, neurons, "A", "Line Topology - Random Data & Neurons Distribution", 0, 1)
 
     # Question B - TEST
     neurons = []
@@ -440,8 +457,11 @@ def main():
         x = random.uniform(-radius, radius)
         points.append(Point(x, create_points(x, radius)))
 
-    for i in range(1):
+    for i in range(10):
+        random.shuffle(points)
         neurons = algorithm(points, neurons, "B", "Circle Topology - Random Data & Neurons Distribution")
+
+    paint_neurons(points, neurons, "B", "Circle Topology - Random Data & Neurons Distribution", 0, 1)
 
     # Question C - TEST
     points = []
@@ -472,13 +492,13 @@ def main():
 
     for i in range(200):
         x = random.uniform(-radius2, radius2)
-        flag = random.randint(0,1)
-        if flag == 1:
-            x *= -1
         points.append(Point(x, create_points_ring(x, radius1, radius2)))
 
     for i in range(10):
+        random.shuffle(points)
         neurons = algorithm(points, neurons, "A", "Line Topology - Uniform Data & Neurons Distribution", 1)
+
+    paint_neurons(points, neurons, "A", "Line Topology - Uniform Data & Neurons Distribution", 1, 1)
 
     # Question B - TEST
     neurons = []
@@ -488,13 +508,14 @@ def main():
 
     for i in range(200):
         x = random.uniform(-radius2, radius2)
-        flag = random.randint(0, 1)
-        if flag == 1:
-            x *= -1
         points.append(Point(x, create_points_ring(x, radius1, radius2)))
 
+    paint_neurons(points, neurons, "B", "Circle Topology - Uniform Data & Neurons Distribution", 1, 1)
     for i in range(10):
+        random.shuffle(points)
         neurons = algorithm(points, neurons, "B", "Circle Topology - Uniform Data & Neurons Distribution", 1)
+
+    paint_neurons(points, neurons, "B", "Circle Topology - Uniform Data & Neurons Distribution", 1, 1)
 
 
 if __name__ == '__main__':
