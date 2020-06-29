@@ -231,8 +231,8 @@ def paint_neurons(points, neurons, task, label, border, done=0):
     :param neurons: Array of neurons
     :param task: Task A / B
     :param label: Title of the task.
-    :param border: if border = 0, draw circle border, if border = 1, draw ring border (2 circles)
-    :param done: If done = 0, draw the neurons and clear, if done = 1, last iteration, show the neurons.
+    :param border: Border = 0 -> draw circle border | Border = 1 -> draw ring border (2 circles)
+    :param done: Done = 0 -> draw the board and clear | Done = 1 -> last iteration, show the board.
     :return: None
     """
     neurons_x = []
@@ -267,13 +267,13 @@ def paint_neurons(points, neurons, task, label, border, done=0):
 
 def paint_board(points, board, label, done=0):
     """
-        Function to draw the points and board.
-        :param points: Array of points
-        :param board: Matrix of neurons
-        :param label: Title of the task
-        :param done: If done = 0, draw the board and clear, if done = 1, last iteration, show the board.
-        :return: None
-        """
+    Function to draw the points and board.
+    :param points: Array of points
+    :param board: Matrix of neurons
+    :param label: Title of the task
+    :param done: Done = 0 -> draw the board and clear | Done = 1 -> last iteration, show the board.
+    :return: None
+    """
     neurons_x = [[] for i in range(2 * len(board[0]))]
     neurons_y = [[] for i in range(2 * len(board[0]))]
     for i in range(len(points)):
@@ -311,7 +311,7 @@ def algorithm(points, neurons, task, label="", border=0):
     :param neurons: Array of neurons
     :param task: Task A / B
     :param label: Title of the task
-    :param border: if border = 0, draw circle border, if border = 1, draw ring border (2 circles)
+    :param border: Border = 0 -> draw circle border | Border = 1 -> draw ring border (2 circles)
     :return: The updated neurons locations according to the given radius.
     """
     if task == "A":
@@ -356,18 +356,25 @@ def algorithm_board(points, board, label=""):
     paint_board(points, new_board, label, 1)
 
 
-def create_points(x, radius):
-    y_ = random.uniform(-radius, radius)
-    while y_ ** 2 + x ** 2 > radius ** 2:
-        y_ = random.uniform(-radius, radius)
-    return y_
-
-
-def create_points_ring(x, radius1, radius2):
-    y_ = random.uniform(-radius2, radius2)
-    while (y_ ** 2 + x ** 2 > radius2 ** 2) or (y_ ** 2 + x ** 2 < radius1 ** 2):
+def create_points(x, radius1, radius2=0):
+    """
+    Function to create points of data.
+    Radius2 = 0 -> create points within a circle | Radius2 != 0 -> create points within a ring.
+    :param x: Random X value
+    :param radius1: Radius 1
+    :param radius2: Radius 2
+    :return: Random Y value within the circle / ring
+    """
+    if radius2 == 0:
+        y_ = random.uniform(-radius1, radius1)
+        while y_ ** 2 + x ** 2 > radius1 ** 2:
+            y_ = random.uniform(-radius1, radius1)
+        return y_
+    else:
         y_ = random.uniform(-radius2, radius2)
-    return y_
+        while (y_ ** 2 + x ** 2 > radius2 ** 2) or (y_ ** 2 + x ** 2 < radius1 ** 2):
+            y_ = random.uniform(-radius2, radius2)
+        return y_
 
 
 def main():
@@ -492,7 +499,7 @@ def main():
 
     for i in range(200):
         x = random.uniform(-radius2, radius2)
-        points.append(Point(x, create_points_ring(x, radius1, radius2)))
+        points.append(Point(x, create_points(x, radius1, radius2)))
 
     for i in range(10):
         random.shuffle(points)
@@ -508,7 +515,7 @@ def main():
 
     for i in range(200):
         x = random.uniform(-radius2, radius2)
-        points.append(Point(x, create_points_ring(x, radius1, radius2)))
+        points.append(Point(x, create_points(x, radius1, radius2)))
 
     paint_neurons(points, neurons, "B", "Circle Topology - Uniform Data & Neurons Distribution", 1, 1)
     for i in range(10):
